@@ -14,7 +14,7 @@ import '../../controllers/app_controller.dart';
 class OnboardingController extends GetxController {
   final FirestoreRepository _repository = FirestoreRepository();
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseStorage _storage = FirebaseStorage.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instanceFor(bucket: 'gs://cherry-on-top-8910e.firebasestorage.app');
   final ImagePicker _picker = ImagePicker();
 
   // Profile Completion
@@ -29,15 +29,15 @@ class OnboardingController extends GetxController {
   // Survey Data
   var selectedProblems = <String>[].obs;
   var otherProblem = TextEditingController();
-  
+
   var selectedGoal = ''.obs;
   var otherGoal = TextEditingController();
-  
+
   var selectedProfession = ''.obs;
   var otherProfession = TextEditingController();
-  
+
   var selectedLevel = ''.obs;
-  
+
   var selectedTime = ''.obs;
 
   // Tutor Onboarding State
@@ -46,15 +46,13 @@ class OnboardingController extends GetxController {
   final bioController = TextEditingController();
   final experienceController = TextEditingController();
   final rateController = TextEditingController();
-  
+
   // New: Profile Pic & Schedule
   var profilePicPath = ''.obs;
   var weeklySchedule = <String, AvailabilityModel>{}.obs;
   var isLoading = false.obs;
 
-  final List<String> days = [
-    "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
-  ];
+  final List<String> days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
   @override
   void onInit() {
@@ -68,11 +66,78 @@ class OnboardingController extends GetxController {
     }
   }
 
-  Future<void> pickImage() async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    if (image != null) {
-      profilePicPath.value = image.path;
+  Future<void> pickImage(ImageSource source) async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: source,
+        imageQuality: 65, // Compressed quality for fast upload and low memory
+        maxWidth: 512,
+        maxHeight: 512,
+      );
+      if (image != null) {
+        profilePicPath.value = image.path;
+      }
+    } catch (e) {
+      Get.snackbar("Error", "Failed to select image: $e", snackPosition: SnackPosition.BOTTOM);
     }
+  }
+
+  void showImageSourceBottomSheet() {
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              "Select Profile Picture",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF800020)),
+            ),
+            const SizedBox(height: 20),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(color: const Color(0xFF800020).withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                child: const Icon(Icons.camera_alt_rounded, color: Color(0xFF800020)),
+              ),
+              title: const Text("Camera", style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: const Text("Take a new photo using camera"),
+              onTap: () {
+                Get.back();
+                pickImage(ImageSource.camera);
+              },
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(color: const Color(0xFF800020).withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                child: const Icon(Icons.photo_library_rounded, color: Color(0xFF800020)),
+              ),
+              title: const Text("Gallery", style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: const Text("Choose an existing photo from gallery"),
+              onTap: () {
+                Get.back();
+                pickImage(ImageSource.gallery);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void toggleAvailability(String day, bool value) {
@@ -82,12 +147,7 @@ class OnboardingController extends GetxController {
 
   void updateDaySchedule(String day, String start, String end, int duration) {
     var current = weeklySchedule[day] ?? AvailabilityModel();
-    weeklySchedule[day] = current.copyWith(
-      startTime: start,
-      endTime: end,
-      slotDuration: duration,
-      isAvailable: true,
-    );
+    weeklySchedule[day] = current.copyWith(startTime: start, endTime: end, slotDuration: duration, isAvailable: true);
   }
 
   void setRole(String role) {
@@ -132,12 +192,12 @@ class OnboardingController extends GetxController {
     try {
       File file = File(profilePicPath.value);
       Reference ref = _storage.ref().child('profile_pics').child('$uid.jpg');
-      UploadTask uploadTask = ref.putFile(file);
+      UploadTask uploadTask = ref.putFile(file, SettableMetadata(contentType: 'image/jpeg'));
       TaskSnapshot snapshot = await uploadTask;
       return await snapshot.ref.getDownloadURL();
     } catch (e) {
       print("Error uploading image: $e");
-      return null;
+      rethrow;
     }
   }
 
@@ -146,6 +206,9 @@ class OnboardingController extends GetxController {
       isLoading.value = true;
       String uid = _auth.currentUser?.uid ?? '';
       String phone = _auth.currentUser?.phoneNumber ?? '';
+
+      // Upload profile pic if selected
+      String? profilePicUrl = await _uploadProfilePic(uid);
 
       UserModel user = UserModel(
         uid: uid,
@@ -158,11 +221,12 @@ class OnboardingController extends GetxController {
         profession: selectedProfession.value == 'Something else' ? otherProfession.text : selectedProfession.value,
         englishLevel: selectedLevel.value,
         preferredTime: selectedTime.value,
+        profilePic: profilePicUrl,
       );
 
       await _repository.createUser(user);
       await Get.find<AppController>().loadUserData(uid);
-      
+
       Get.offAllNamed(Routes.STUDENT_DASHBOARD);
     } catch (e) {
       Get.snackbar("Error", e.toString());
@@ -216,7 +280,7 @@ class OnboardingController extends GetxController {
         weeklySchedule: weeklySchedule,
       );
       await _repository.createTutor(tutorPublicData);
-      
+
       await Get.find<AppController>().loadUserData(uid);
 
       Get.offAllNamed(Routes.TUTOR_DASHBOARD);

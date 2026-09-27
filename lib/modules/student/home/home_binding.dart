@@ -10,10 +10,10 @@ class HomeBinding extends Bindings {
   @override
   void dependencies() {
     Get.lazyPut<HomeController>(() => HomeController());
-    Get.lazyPut<ProfileController>(() => ProfileController());
+    Get.lazyPut<ProfileController>(() => ProfileController(), fenix: true);
     Get.lazyPut<TutorsController>(() => TutorsController());
     Get.lazyPut<SessionsController>(() => SessionsController());
-    Get.lazyPut<TutorDashboardController>(() => TutorDashboardController());
+    Get.lazyPut<TutorDashboardController>(() => TutorDashboardController(), fenix: true);
     Get.lazyPut<TutorEarningsController>(() => TutorEarningsController());
   }
 }

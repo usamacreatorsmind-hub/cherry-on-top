@@ -21,7 +21,6 @@ import '../modules/student/refer_earn/refer_and_earn_screen.dart';
 import '../modules/student/refer_earn/refer_and_earn_binding.dart';
 import '../modules/student/notifications/notification_screen.dart';
 import '../modules/student/notifications/notification_binding.dart';
-import '../modules/student/refer_earn/refer_and_earn_binding.dart';
 import '../modules/onboarding/onboarding_binding.dart';
 import '../modules/onboarding/role_selection_screen.dart';
 import '../modules/onboarding/profile_completion_screen.dart';
@@ -98,7 +97,9 @@ class AppPages {
       name: _Paths.STUDENT_EDIT_PROFILE,
       page: () => const StudentEditProfileScreen(),
       binding: BindingsBuilder(() {
-        Get.lazyPut<ProfileController>(() => ProfileController());
+        if (!Get.isRegistered<ProfileController>()) {
+          Get.put(ProfileController(), permanent: true);
+        }
       }),
     ),
     GetPage(

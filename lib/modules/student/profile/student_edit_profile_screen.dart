@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/theme/app_theme.dart';
@@ -30,6 +31,9 @@ class StudentEditProfileScreen extends GetView<ProfileController> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            _buildProfileImagePicker(),
+            const SizedBox(height: 28),
+
             _buildSectionLabel("FULL NAME"),
             _buildTextField(controller: controller.nameController, hint: "Enter your name", icon: Icons.person_outline_rounded),
             const SizedBox(height: 24),
@@ -56,6 +60,7 @@ class StudentEditProfileScreen extends GetView<ProfileController> {
               items: ["Beginner", "Intermediate", "Upper Intermediate", "Advanced"],
               icon: Icons.auto_awesome_outlined,
             ),
+            const SizedBox(height: 24),
 
             _buildSectionLabel("EMAIL ADDRESS"),
             _buildTextField(controller: controller.emailController, hint: "Enter your email", icon: Icons.email_outlined),
@@ -76,6 +81,76 @@ class StudentEditProfileScreen extends GetView<ProfileController> {
         ),
       ),
       bottomSheet: _buildSaveButton(),
+    );
+  }
+
+  Widget _buildProfileImagePicker() {
+    return Center(
+      child: Column(
+        children: [
+          GestureDetector(
+            onTap: () => controller.showImageSourceBottomSheet(),
+            child: Obx(() {
+              final user = controller.appController.user.value;
+              final localPath = controller.profilePicPath.value;
+
+              ImageProvider? imageProvider;
+              if (localPath.isNotEmpty) {
+                imageProvider = FileImage(File(localPath));
+              } else if (user?.profilePic != null && user!.profilePic!.isNotEmpty) {
+                imageProvider = NetworkImage(user.profilePic!);
+              }
+
+              return Stack(
+                children: [
+                  Container(
+                    width: 110,
+                    height: 110,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppTheme.maroon.withOpacity(0.08),
+                      border: Border.all(color: AppTheme.maroon.withOpacity(0.2), width: 3),
+                      image: imageProvider != null
+                          ? DecorationImage(image: imageProvider, fit: BoxFit.cover)
+                          : null,
+                    ),
+                    child: imageProvider == null
+                        ? const Icon(Icons.person, size: 60, color: AppTheme.maroon)
+                        : null,
+                  ),
+                  Positioned(
+                    right: 4,
+                    bottom: 4,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: const BoxDecoration(
+                        color: AppTheme.maroon,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2)),
+                        ],
+                      ),
+                      child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 18),
+                    ),
+                  ),
+                ],
+              );
+            }),
+          ),
+          const SizedBox(height: 10),
+          GestureDetector(
+            onTap: () => controller.showImageSourceBottomSheet(),
+            child: const Text(
+              "Change Profile Photo",
+              style: TextStyle(
+                color: AppTheme.maroon,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

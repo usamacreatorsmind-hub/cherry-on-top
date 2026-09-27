@@ -133,6 +133,7 @@ class UserModel {
     bool? isApproved,
     double? totalEarnings,
     Map<String, AvailabilityModel>? weeklySchedule,
+    String? profilePic,
   }) {
     return UserModel(
       uid: uid,
@@ -156,7 +157,7 @@ class UserModel {
       completedSessions: completedSessions,
       availableSessions: availableSessions,
       remainingDays: remainingDays,
-      profilePic: profilePic,
+      profilePic: profilePic ?? this.profilePic,
       weeklySchedule: weeklySchedule ?? this.weeklySchedule,
     );
   }

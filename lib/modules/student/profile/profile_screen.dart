@@ -68,22 +68,54 @@ class ProfileScreen extends GetView<ProfileController> {
         decoration: BoxDecoration(color: AppTheme.maroon.withAlpha(10), borderRadius: BorderRadius.circular(24)),
         child: Row(
           children: [
-            CircleAvatar(
-              radius: 35,
-              backgroundColor: AppTheme.maroon,
-              child: const Icon(Icons.person, color: Colors.white, size: 40),
-            ),
+            Obx(() {
+              final user = controller.appController.user.value;
+              return GestureDetector(
+                onTap: () => Get.toNamed(Routes.STUDENT_EDIT_PROFILE),
+                child: Stack(
+                  children: [
+                    CircleAvatar(
+                      radius: 35,
+                      backgroundColor: AppTheme.maroon.withOpacity(0.1),
+                      backgroundImage: (user?.profilePic != null && user!.profilePic!.isNotEmpty)
+                          ? NetworkImage(user.profilePic!)
+                          : null,
+                      child: (user?.profilePic == null || user!.profilePic!.isEmpty)
+                          ? const Icon(Icons.person, color: AppTheme.maroon, size: 40)
+                          : null,
+                    ),
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(5),
+                        decoration: BoxDecoration(
+                          color: AppTheme.maroon,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 1.5),
+                        ),
+                        child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Obx(
-                    () => Text(
-                      controller.appController.userName.value,
+                  Obx(() {
+                    final user = controller.appController.user.value;
+                    final name = (user?.name != null && user!.name.trim().isNotEmpty)
+                        ? user.name
+                        : controller.appController.userName.value;
+                    return Text(
+                      name.trim().isNotEmpty ? name : "Student Name",
                       style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.maroon),
-                    ),
-                  ),
+                    );
+                  }),
                   const Text("Student Account", style: TextStyle(color: Colors.grey, fontSize: 13)),
                 ],
               ),

@@ -63,16 +63,52 @@ class TutorDetailsController extends GetxController {
     _repository.getTutorSessions(tutor.id).listen((sessions) {
       bookedSessions.assignAll(sessions);
       isFetchingSessions.value = false;
-      _generateSlotsForDate(next7Days[selectedDateIndex.value]);
+      _selectFirstAvailableDate();
     });
   }
 
   void _generateNext7Days() {
     DateTime now = DateTime.now();
-    // Start from today, but only if it's within the next 7 days
+    next7Days.clear();
     for (int i = 0; i < 7; i++) {
       next7Days.add(DateTime(now.year, now.month, now.day).add(Duration(days: i)));
     }
+  }
+
+  void _selectFirstAvailableDate() {
+    for (int i = 0; i < next7Days.length; i++) {
+      if (hasAvailableSlotsForDate(next7Days[i])) {
+        selectedDateIndex.value = i;
+        _generateSlotsForDate(next7Days[i]);
+        return;
+      }
+    }
+    // Default to today if no slots found across next 7 days
+    selectedDateIndex.value = 0;
+    _generateSlotsForDate(next7Days[0]);
+  }
+
+  bool hasAvailableSlotsForDate(DateTime date) {
+    String dayName = DateFormat('EEEE').format(date);
+    AvailabilityModel? availability = tutor.weeklySchedule?[dayName];
+
+    if (availability == null || !availability.isAvailable) return false;
+
+    DateTime start = _parseTime(date, availability.startTime);
+    DateTime end = _parseTime(date, availability.endTime);
+    int duration = availability.slotDuration;
+    DateTime now = DateTime.now();
+
+    DateTime current = start;
+    while (current.add(Duration(minutes: duration)).isBefore(end) || current.add(Duration(minutes: duration)).isAtSameMomentAs(end)) {
+      if (current.isAfter(now)) {
+        if (!isSlotBooked(current)) {
+          return true;
+        }
+      }
+      current = current.add(Duration(minutes: duration));
+    }
+    return false;
   }
 
   void onDateSelected(int index) {
@@ -93,6 +129,16 @@ class TutorDetailsController extends GetxController {
     );
   }
 
+  bool isSlotStringBooked(String slotStr, DateTime date) {
+    try {
+      String startTimePart = slotStr.split(' - ')[0];
+      DateTime startTime = _parseTime12h(date, startTimePart);
+      return isSlotBooked(startTime);
+    } catch (e) {
+      return false;
+    }
+  }
+
   void _generateSlotsForDate(DateTime date) {
     availableSlots.clear();
     String dayName = DateFormat('EEEE').format(date);
@@ -107,12 +153,9 @@ class TutorDetailsController extends GetxController {
 
     DateTime current = start;
     while (current.add(Duration(minutes: duration)).isBefore(end) || current.add(Duration(minutes: duration)).isAtSameMomentAs(end)) {
-      // 1. Check if slot is in the past (for today)
       if (current.isAfter(now)) {
         String startTimeStr = _formatTime12h(DateFormat('HH:mm').format(current));
         String endTimeStr = _formatTime12h(DateFormat('HH:mm').format(current.add(Duration(minutes: duration))));
-
-        // We add the slot string. In UI we will check if it's booked.
         availableSlots.add("$startTimeStr - $endTimeStr");
       }
 
@@ -139,7 +182,6 @@ class TutorDetailsController extends GetxController {
   }
 
   DateTime _parseTime12h(DateTime date, String time12h) {
-    // time12h format: "09:00 AM"
     final parts = time12h.split(' ');
     final timeParts = parts[0].split(':');
     int hour = int.parse(timeParts[0]);
@@ -170,6 +212,12 @@ class TutorDetailsController extends GetxController {
       String startTimePart = selectedSlot.value.split(' - ')[0];
       DateTime startTime = _parseTime12h(selectedDate, startTimePart);
 
+      if (isSlotBooked(startTime)) {
+        Get.snackbar("Slot Unavailable", "This slot has already been booked by another student.");
+        isLoading.value = false;
+        return;
+      }
+
       final session = SessionModel(
         id: const Uuid().v4(),
         tutorId: tutor.id,
@@ -178,14 +226,12 @@ class TutorDetailsController extends GetxController {
         userName: appController.user.value?.name ?? currentUser.displayName ?? 'Student',
         dateTime: startTime,
         status: 'upcoming',
-        price: tutor.hourlyRate ?? 0.0,
+        price: tutor.hourlyRate,
         duration: tutor.weeklySchedule?[DateFormat('EEEE').format(selectedDate)]?.slotDuration ?? 25,
       );
 
       await _repository.bookSession(session);
-      
-      // Update local wallet/sessions if needed
-      appController.updateWallet(-0); // Example, adjusting balance if sessions aren't free
+      appController.updateWallet(-0);
       
       Get.back();
       Get.snackbar("Success", "Session booked successfully!");

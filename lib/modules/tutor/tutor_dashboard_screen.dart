@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/video_call_controller.dart';
@@ -15,12 +16,7 @@ class TutorDashboardScreen extends GetView<TutorDashboardController> {
 
   @override
   Widget build(BuildContext context) {
-    final List<Widget> screens = [
-      _buildHome(),
-      _buildSchedule(),
-      const TutorEarningsScreen(),
-      _buildProfile(context),
-    ];
+    final List<Widget> screens = [_buildHome(), _buildSchedule(), const TutorEarningsScreen(), _buildProfile(context)];
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9FB),
@@ -29,31 +25,32 @@ class TutorDashboardScreen extends GetView<TutorDashboardController> {
         elevation: 0,
         surfaceTintColor: Colors.white,
         shadowColor: Colors.black.withOpacity(0.05),
-        title: Obx(() => Text(
-          controller.isEditing.value ? "Edit Profile" : "Tutor Dashboard",
-          style: const TextStyle(color: AppTheme.maroon, fontWeight: FontWeight.bold, fontSize: 18),
-        )),
+        title: Obx(
+          () => Text(
+            controller.isEditing.value ? "Edit Profile" : "Tutor Dashboard",
+            style: const TextStyle(color: AppTheme.maroon, fontWeight: FontWeight.bold, fontSize: 18),
+          ),
+        ),
         actions: [
-          Obx(() => controller.currentIndex.value == 3
-              ? TextButton(
-                  onPressed: () => Get.toNamed(Routes.TUTOR_EDIT_PROFILE),
-                  child: const Text(
-                    "Edit",
-                    style: TextStyle(color: AppTheme.maroon, fontWeight: FontWeight.bold, fontSize: 15),
+          Obx(
+            () => controller.currentIndex.value == 3
+                ? TextButton(
+                    onPressed: () => Get.toNamed(Routes.TUTOR_EDIT_PROFILE),
+                    child: const Text(
+                      "Edit",
+                      style: TextStyle(color: AppTheme.maroon, fontWeight: FontWeight.bold, fontSize: 15),
+                    ),
+                  )
+                : IconButton(
+                    onPressed: () => Get.toNamed(Routes.NOTIFICATIONS),
+                    icon: const Icon(Icons.notifications_none_rounded, color: AppTheme.maroon),
                   ),
-                )
-              : IconButton(
-                  onPressed: () => Get.toNamed(Routes.NOTIFICATIONS),
-                  icon: const Icon(Icons.notifications_none_rounded, color: AppTheme.maroon),
-                )),
+          ),
           const SizedBox(width: 8),
         ],
       ),
       body: Obx(() => screens[controller.currentIndex.value]),
-      bottomNavigationBar: Obx(() => TutorBottomNav(
-        currentIndex: controller.currentIndex.value,
-        onTap: controller.changeIndex,
-      )),
+      bottomNavigationBar: Obx(() => TutorBottomNav(currentIndex: controller.currentIndex.value, onTap: controller.changeIndex)),
     );
   }
 
@@ -75,13 +72,7 @@ class TutorDashboardScreen extends GetView<TutorDashboardController> {
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.maroon.withOpacity(0.25),
-                  blurRadius: 15,
-                  offset: const Offset(0, 6),
-                ),
-              ],
+              boxShadow: [BoxShadow(color: AppTheme.maroon.withOpacity(0.25), blurRadius: 15, offset: const Offset(0, 6))],
             ),
             child: Row(
               children: [
@@ -91,9 +82,7 @@ class TutorDashboardScreen extends GetView<TutorDashboardController> {
                   child: CircleAvatar(
                     radius: 28,
                     backgroundColor: AppTheme.maroon.withOpacity(0.1),
-                    backgroundImage: (user?.profilePic != null && user!.profilePic!.isNotEmpty)
-                        ? NetworkImage(user.profilePic!)
-                        : null,
+                    backgroundImage: (user?.profilePic != null && user!.profilePic!.isNotEmpty) ? NetworkImage(user.profilePic!) : null,
                     child: (user?.profilePic == null || user!.profilePic!.isEmpty)
                         ? const Icon(Icons.person, color: AppTheme.maroon, size: 30)
                         : null,
@@ -105,12 +94,7 @@ class TutorDashboardScreen extends GetView<TutorDashboardController> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
-                        children: [
-                           Text(
-                            "Welcome back",
-                            style: TextStyle(fontSize: 14, color: Colors.white70),
-                          ),
-                        ],
+                        children: [Text("Welcome back", style: TextStyle(fontSize: 14, color: Colors.white70))],
                       ),
                       const SizedBox(height: 2),
                       Text(
@@ -130,19 +114,9 @@ class TutorDashboardScreen extends GetView<TutorDashboardController> {
           // Stat Cards
           Row(
             children: [
-              _buildStatCard(
-                "Upcoming Sessions",
-                upcoming.length.toString(),
-                Icons.video_call_rounded,
-                Colors.blue,
-              ),
+              _buildStatCard("Upcoming Sessions", upcoming.length.toString(), Icons.video_call_rounded, Colors.blue),
               const SizedBox(width: 16),
-              _buildStatCard(
-                "Total Earnings",
-                "₹${controller.totalEarnings.toInt()}",
-                Icons.account_balance_wallet_rounded,
-                Colors.green,
-              ),
+              _buildStatCard("Total Earnings", "₹${controller.totalEarnings.toInt()}", Icons.account_balance_wallet_rounded, Colors.green),
             ],
           ),
           const SizedBox(height: 28),
@@ -157,7 +131,10 @@ class TutorDashboardScreen extends GetView<TutorDashboardController> {
               ),
               TextButton(
                 onPressed: () => controller.changeIndex(1), // Switch to Schedule tab
-                child: const Text("View All", style: TextStyle(color: AppTheme.maroon, fontWeight: FontWeight.w600)),
+                child: const Text(
+                  "View All",
+                  style: TextStyle(color: AppTheme.maroon, fontWeight: FontWeight.w600),
+                ),
               ),
             ],
           ),
@@ -189,10 +166,7 @@ class TutorDashboardScreen extends GetView<TutorDashboardController> {
               ),
             )
           else
-            ...upcoming.take(3).map((session) => _buildUpcomingSessionCard(
-                  session,
-                  DateFormat('MMM d, hh:mm a').format(session.dateTime),
-                )),
+            ...upcoming.take(3).map((session) => _buildUpcomingSessionCard(session, DateFormat('MMM d, hh:mm a').format(session.dateTime))),
         ],
       );
     });
@@ -217,14 +191,7 @@ class TutorDashboardScreen extends GetView<TutorDashboardController> {
               ],
             ),
           ),
-          Expanded(
-            child: TabBarView(
-              children: [
-                _buildSessionList(true),
-                _buildSessionList(false),
-              ],
-            ),
-          ),
+          Expanded(child: TabBarView(children: [_buildSessionList(true), _buildSessionList(false)])),
         ],
       ),
     );
@@ -238,10 +205,7 @@ class TutorDashboardScreen extends GetView<TutorDashboardController> {
       final list = isUpcoming ? controller.upcomingSessions : controller.pastSessions;
       if (list.isEmpty) {
         return Center(
-          child: Text(
-            "No ${isUpcoming ? 'upcoming' : 'past'} sessions found",
-            style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
-          ),
+          child: Text("No ${isUpcoming ? 'upcoming' : 'past'} sessions found", style: TextStyle(color: Colors.grey.shade600, fontSize: 14)),
         );
       }
       return ListView.builder(
@@ -266,23 +230,14 @@ class TutorDashboardScreen extends GetView<TutorDashboardController> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: Colors.grey.shade200),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(14),
-              ),
+              decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(14)),
               child: Icon(icon, color: color, size: 22),
             ),
             const SizedBox(height: 16),
@@ -312,13 +267,7 @@ class TutorDashboardScreen extends GetView<TutorDashboardController> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Row(
         children: [
@@ -345,10 +294,7 @@ class TutorDashboardScreen extends GetView<TutorDashboardController> {
                     const Icon(Icons.access_time_rounded, size: 14, color: Colors.grey),
                     const SizedBox(width: 4),
                     Expanded(
-                      child: Text(
-                        time,
-                        style: TextStyle(fontSize: 12.5, color: Colors.grey.shade600),
-                      ),
+                      child: Text(time, style: TextStyle(fontSize: 12.5, color: Colors.grey.shade600)),
                     ),
                   ],
                 ),
@@ -462,33 +408,33 @@ class TutorDashboardScreen extends GetView<TutorDashboardController> {
       padding: const EdgeInsets.all(24),
       children: [
         Center(
-          child: Stack(
-            children: [
-              CircleAvatar(
-                radius: 54,
-                backgroundColor: AppTheme.maroon.withOpacity(0.1),
-                backgroundImage: (user?.profilePic != null && user!.profilePic!.isNotEmpty)
-                    ? NetworkImage(user.profilePic!)
-                    : null,
-                child: (user?.profilePic == null || user!.profilePic!.isEmpty)
-                    ? const Icon(Icons.person, size: 54, color: AppTheme.maroon)
-                    : null,
-              ),
-              if (user?.isApproved == true)
+          child: GestureDetector(
+            onTap: () => Get.toNamed(Routes.TUTOR_EDIT_PROFILE),
+            child: Stack(
+              children: [
+                CircleAvatar(
+                  radius: 54,
+                  backgroundColor: AppTheme.maroon.withOpacity(0.1),
+                  backgroundImage: (user?.profilePic != null && user!.profilePic!.isNotEmpty) ? NetworkImage(user.profilePic!) : null,
+                  child: (user?.profilePic == null || user!.profilePic!.isEmpty)
+                      ? const Icon(Icons.person, size: 54, color: AppTheme.maroon)
+                      : null,
+                ),
                 Positioned(
-                  right: 4,
-                  bottom: 4,
+                  right: 2,
+                  bottom: 2,
                   child: Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: Colors.green,
+                      color: AppTheme.maroon,
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white, width: 2),
                     ),
-                    child: const Icon(Icons.check, color: Colors.white, size: 14),
+                    child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 14),
                   ),
                 ),
-            ],
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 16),
@@ -500,10 +446,7 @@ class TutorDashboardScreen extends GetView<TutorDashboardController> {
                 style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
               ),
               const SizedBox(height: 4),
-              Text(
-                user?.email ?? 'email@example.com',
-                style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
-              ),
+              Text(user?.email ?? 'email@example.com', style: TextStyle(color: Colors.grey.shade600, fontSize: 14)),
             ],
           ),
         ),
@@ -516,13 +459,7 @@ class TutorDashboardScreen extends GetView<TutorDashboardController> {
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: Colors.grey.shade200),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.03),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -533,23 +470,25 @@ class TutorDashboardScreen extends GetView<TutorDashboardController> {
               const Padding(padding: EdgeInsets.symmetric(vertical: 14), child: Divider(height: 1)),
               _buildInfoSection("Session Price", "₹${user?.hourlyRate ?? 0} / session"),
               const Padding(padding: EdgeInsets.symmetric(vertical: 14), child: Divider(height: 1)),
-              const Text("Expertise", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.grey)),
+              const Text(
+                "Expertise",
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.grey),
+              ),
               const SizedBox(height: 10),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: (user?.expertise as List<String>? ?? [])
-                    .map((e) => Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: AppTheme.maroon.withOpacity(0.08),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            e,
-                            style: const TextStyle(color: AppTheme.maroon, fontSize: 12, fontWeight: FontWeight.w600),
-                          ),
-                        ))
+                    .map(
+                      (e) => Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(color: AppTheme.maroon.withOpacity(0.08), borderRadius: BorderRadius.circular(10)),
+                        child: Text(
+                          e,
+                          style: const TextStyle(color: AppTheme.maroon, fontSize: 12, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    )
                     .toList(),
               ),
             ],
@@ -573,7 +512,10 @@ class TutorDashboardScreen extends GetView<TutorDashboardController> {
         OutlinedButton.icon(
           onPressed: () => Get.find<AuthController>().logout(),
           icon: const Icon(Icons.logout_rounded, color: Colors.red),
-          label: const Text("Logout", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 16)),
+          label: const Text(
+            "Logout",
+            style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 16),
+          ),
           style: OutlinedButton.styleFrom(
             minimumSize: const Size(double.infinity, 54),
             side: BorderSide(color: Colors.red.shade300),
@@ -584,10 +526,72 @@ class TutorDashboardScreen extends GetView<TutorDashboardController> {
     );
   }
 
+  Widget _buildProfileImagePicker() {
+    return Center(
+      child: Column(
+        children: [
+          GestureDetector(
+            onTap: () => controller.showImageSourceBottomSheet(),
+            child: Obx(() {
+              final user = controller.appController.user.value;
+              final localPath = controller.profilePicPath.value;
+
+              ImageProvider? imageProvider;
+              if (localPath.isNotEmpty) {
+                imageProvider = FileImage(File(localPath));
+              } else if (user?.profilePic != null && user!.profilePic!.isNotEmpty) {
+                imageProvider = NetworkImage(user.profilePic!);
+              }
+
+              return Stack(
+                children: [
+                  Container(
+                    width: 110,
+                    height: 110,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppTheme.maroon.withOpacity(0.08),
+                      border: Border.all(color: AppTheme.maroon.withOpacity(0.2), width: 3),
+                      image: imageProvider != null ? DecorationImage(image: imageProvider, fit: BoxFit.cover) : null,
+                    ),
+                    child: imageProvider == null ? const Icon(Icons.person, size: 60, color: AppTheme.maroon) : null,
+                  ),
+                  Positioned(
+                    right: 4,
+                    bottom: 4,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: const BoxDecoration(
+                        color: AppTheme.maroon,
+                        shape: BoxShape.circle,
+                        boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2))],
+                      ),
+                      child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 18),
+                    ),
+                  ),
+                ],
+              );
+            }),
+          ),
+          const SizedBox(height: 10),
+          GestureDetector(
+            onTap: () => controller.showImageSourceBottomSheet(),
+            child: const Text(
+              "Change Profile Photo",
+              style: TextStyle(color: AppTheme.maroon, fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildEditProfileForm() {
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
+        _buildProfileImagePicker(),
+        const SizedBox(height: 24),
         _buildInputField("Full Name", controller.nameController),
         const SizedBox(height: 20),
         _buildInputField("Bio", controller.bioController, maxLines: 4),
@@ -596,36 +600,41 @@ class TutorDashboardScreen extends GetView<TutorDashboardController> {
         const SizedBox(height: 20),
         _buildInputField("Session Price (₹)", controller.rateController, keyboardType: TextInputType.number),
         const SizedBox(height: 24),
-        const Text("Expertise", style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.maroon, fontSize: 15)),
+        const Text(
+          "Expertise",
+          style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.maroon, fontSize: 15),
+        ),
         const SizedBox(height: 12),
         Wrap(
           spacing: 8,
           runSpacing: 8,
           children: ["Business English", "IELTS", "Spoken English", "Interview Prep"]
-              .map((e) => Obx(() {
-                    bool isSelected = controller.selectedExpertise.contains(e);
-                    return ChoiceChip(
-                      label: Text(e),
-                      selected: isSelected,
-                      onSelected: (val) {
-                        if (val) {
-                          controller.selectedExpertise.add(e);
-                        } else {
-                          controller.selectedExpertise.remove(e);
-                        }
-                      },
-                      selectedColor: AppTheme.maroon.withOpacity(0.15),
-                      labelStyle: TextStyle(
-                        color: isSelected ? AppTheme.maroon : Colors.black87,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                      ),
-                      backgroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(color: isSelected ? AppTheme.maroon : Colors.grey.shade300),
-                      ),
-                    );
-                  }))
+              .map(
+                (e) => Obx(() {
+                  bool isSelected = controller.selectedExpertise.contains(e);
+                  return ChoiceChip(
+                    label: Text(e),
+                    selected: isSelected,
+                    onSelected: (val) {
+                      if (val) {
+                        controller.selectedExpertise.add(e);
+                      } else {
+                        controller.selectedExpertise.remove(e);
+                      }
+                    },
+                    selectedColor: AppTheme.maroon.withOpacity(0.15),
+                    labelStyle: TextStyle(
+                      color: isSelected ? AppTheme.maroon : Colors.black87,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                    ),
+                    backgroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(color: isSelected ? AppTheme.maroon : Colors.grey.shade300),
+                    ),
+                  );
+                }),
+              )
               .toList(),
         ),
       ],
@@ -636,7 +645,10 @@ class TutorDashboardScreen extends GetView<TutorDashboardController> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey, fontSize: 13)),
+        Text(
+          label,
+          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey, fontSize: 13),
+        ),
         const SizedBox(height: 8),
         TextField(
           controller: textController,
@@ -645,9 +657,18 @@ class TutorDashboardScreen extends GetView<TutorDashboardController> {
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.white,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.grey.shade300)),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.grey.shade300)),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppTheme.maroon, width: 1.5)),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: AppTheme.maroon, width: 1.5),
+            ),
           ),
         ),
       ],
@@ -658,9 +679,15 @@ class TutorDashboardScreen extends GetView<TutorDashboardController> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.grey)),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.grey),
+        ),
         const SizedBox(height: 4),
-        Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.black87, height: 1.3)),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.black87, height: 1.3),
+        ),
       ],
     );
   }

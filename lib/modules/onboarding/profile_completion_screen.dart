@@ -41,7 +41,7 @@ class ProfileCompletionScreen extends GetView<OnboardingController> {
 
               Center(
                 child: GestureDetector(
-                  onTap: () => controller.pickImage(),
+                  onTap: () => controller.showImageSourceBottomSheet(),
                   child: Obx(() => Container(
                     height: 120, width: 120,
                     decoration: BoxDecoration(
