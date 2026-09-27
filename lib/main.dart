@@ -17,7 +17,6 @@ void main() async {
   );
 
   await NotificationService.initialize();
-
   // Request Microphone and Camera permission at app startup/earliest point 
   // to avoid Android 14+ FGS SecurityException during background CallKit accept
   try {
