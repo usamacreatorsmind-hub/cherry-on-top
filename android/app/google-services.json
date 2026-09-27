@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "76841779091",
+    "project_id": "cherry-on-top-8910e",
+    "storage_bucket": "cherry-on-top-8910e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:76841779091:android:21e145bf2bab5f4b1db266",
+        "android_client_info": {
+          "package_name": "com.app.cherry_on_top"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBSLTU1fIKeoVpC3lM7QaqgCDqOYIoIOO4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
