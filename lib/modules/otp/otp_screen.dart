@@ -59,7 +59,7 @@ class OTPScreen extends GetView<OTPController> {
               ),
               const SizedBox(height: 8),
               Text(
-                "We've sent a 6-digit code to +91 $displayPhone",
+                "We've sent a 4-digit code to +91 $displayPhone",
                 style: const TextStyle(
                   fontSize: 14,
                   color: Colors.black54,
@@ -67,7 +67,7 @@ class OTPScreen extends GetView<OTPController> {
               ),
               const SizedBox(height: 48),
               Pinput(
-                length: 6,
+                length: 4,
                 controller: controller.otpController,
                 defaultPinTheme: defaultPinTheme,
                 focusedPinTheme: focusedPinTheme,

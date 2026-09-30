@@ -139,3 +139,95 @@ exports.sendSessionReminders = functions.pubsub
       await batch.commit();
       return null;
     });
+
+// ==========================================
+// MSG91 OTP Integration
+// ==========================================
+const MSG91_AUTH_KEY = "404117AQvUYpgj64e33a96P1";
+const MSG91_TEMPLATE_ID = "64e3441ad6fc05126946fb23";
+
+exports.sendMsg91Otp = functions.https.onCall(async (data, context) => {
+  const phoneNumber = data.phoneNumber;
+  if (!phoneNumber || phoneNumber.length !== 10) {
+    throw new functions.https.HttpsError("invalid-argument", "Valid 10-digit phone number is required.");
+  }
+
+  const mobile = `91${phoneNumber}`;
+  const url = `https://control.msg91.com/api/v5/otp?template_id=${MSG91_TEMPLATE_ID}&mobile=${mobile}&otp_length=4`;
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "authkey": MSG91_AUTH_KEY,
+        "content-type": "application/json",
+      },
+    });
+    const result = await response.json();
+    if (result.type === "success" || result.status === "success") {
+      return { success: true, message: "OTP sent successfully" };
+    } else {
+      throw new Error(result.message || "Failed to send OTP via MSG91");
+    }
+  } catch (error) {
+    throw new functions.https.HttpsError("internal", error.message || "Failed to send OTP");
+  }
+});
+
+exports.verifyMsg91Otp = functions.https.onCall(async (data, context) => {
+  const phoneNumber = data.phoneNumber;
+  const otp = data.otp;
+
+  if (!phoneNumber || !otp) {
+    throw new functions.https.HttpsError("invalid-argument", "Phone number and OTP are required.");
+  }
+
+  const mobile = `91${phoneNumber}`;
+  const formattedPhone = `+${mobile}`;
+  const url = `https://control.msg91.com/api/v5/otp/verify?otp=${otp}&mobile=${mobile}`;
+
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "authkey": MSG91_AUTH_KEY,
+      },
+    });
+    const result = await response.json();
+
+    if (result.type === "success" || result.status === "success" || (result.message && result.message.toLowerCase().includes("already verified"))) {
+      let uid;
+      try {
+        const existingUser = await admin.auth().getUserByPhoneNumber(formattedPhone);
+        uid = existingUser.uid;
+      } catch (err) {
+        uid = `phone_${mobile}`;
+        try {
+          await admin.auth().getUser(uid);
+        } catch (e) {
+          try {
+            await admin.auth().createUser({
+              uid: uid,
+              phoneNumber: formattedPhone,
+            });
+          } catch (createErr) {
+            if (createErr.code === 'auth/phone-number-already-exists') {
+              const clashUser = await admin.auth().getUserByPhoneNumber(formattedPhone);
+              uid = clashUser.uid;
+            } else {
+              throw createErr;
+            }
+          }
+        }
+      }
+
+      const customToken = await admin.auth().createCustomToken(uid);
+      return { success: true, customToken: customToken };
+    } else {
+      throw new Error(result.message || "Invalid OTP");
+    }
+  } catch (error) {
+    throw new functions.https.HttpsError("invalid-argument", error.message || "OTP verification failed");
+  }
+});
+

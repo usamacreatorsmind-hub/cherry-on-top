@@ -7,10 +7,10 @@ class OTPController extends GetxController {
   final AuthController authController = Get.find<AuthController>();
 
   void verifyOtp() {
-    if (otpController.text.length == 6) {
+    if (otpController.text.length == 4) {
       authController.signInWithOTP(otpController.text);
     } else {
-      Get.snackbar("Error", "Please enter a valid 6-digit OTP");
+      Get.snackbar("Error", "Please enter a valid 4-digit OTP");
     }
   }
 

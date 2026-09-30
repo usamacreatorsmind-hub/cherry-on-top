@@ -7,13 +7,16 @@ import '../routes/app_pages.dart';
 import '../data/repositories/firestore_repository.dart';
 import '../data/models/user_model.dart';
 import 'app_controller.dart';
+import '../services/msg91_service.dart';
 
 class AuthController extends GetxController {
   static AuthController get instance => Get.find();
   FirebaseAuth auth = FirebaseAuth.instance;
   final FirestoreRepository _repository = FirestoreRepository();
+  final Msg91Service _msg91Service = Get.put(Msg91Service());
   
   var verificationId = ''.obs;
+  var currentPhoneNumber = ''.obs;
   var isLoading = false.obs;
   late Rx<User?> _user;
 
@@ -54,57 +57,38 @@ class AuthController extends GetxController {
     }
   }
 
-  // Send OTP to the mobile number
+  // Send OTP to the mobile number via MSG91
   Future<void> verifyPhoneNumber(String phoneNumber) async {
     try {
       isLoading.value = true;
-      await auth.verifyPhoneNumber(
-        phoneNumber: '+91$phoneNumber',
-        verificationCompleted: (PhoneAuthCredential credential) async {
-          await auth.signInWithCredential(credential);
-          await _handleUserPostLogin();
-        },
-        verificationFailed: (FirebaseAuthException e) {
-          isLoading.value = false;
-          Get.snackbar(
-            "Error",
-            e.message ?? "Verification failed",
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.redAccent,
-            colorText: Colors.white,
-          );
-        },
-        codeSent: (String verId, int? resendToken) {
-          verificationId.value = verId;
-          isLoading.value = false;
-          Get.toNamed(Routes.OTP, arguments: phoneNumber);
-        },
-        codeAutoRetrievalTimeout: (String verId) {
-          verificationId.value = verId;
-        },
-      );
+      currentPhoneNumber.value = phoneNumber;
+      bool success = await _msg91Service.sendOtp(phoneNumber);
+      isLoading.value = false;
+      if (success) {
+        Get.toNamed(Routes.OTP, arguments: phoneNumber);
+      }
     } catch (e) {
       isLoading.value = false;
       Get.snackbar("Error", e.toString());
     }
   }
 
-  // Verify the OTP entered by user
+  // Verify the OTP entered by user via MSG91
   Future<void> signInWithOTP(String smsCode) async {
     try {
       isLoading.value = true;
-      PhoneAuthCredential credential = PhoneAuthProvider.credential(
-        verificationId: verificationId.value,
-        smsCode: smsCode,
-      );
-
-      await auth.signInWithCredential(credential);
-      await _handleUserPostLogin();
-    } on FirebaseAuthException catch (e) {
+      String? customToken = await _msg91Service.verifyOtp(currentPhoneNumber.value, smsCode);
+      if (customToken != null) {
+        await auth.signInWithCustomToken(customToken);
+        await _handleUserPostLogin();
+      } else {
+        isLoading.value = false;
+      }
+    } catch (e) {
       isLoading.value = false;
       Get.snackbar(
         "Verification Failed",
-        e.message ?? "Invalid OTP",
+        e.toString(),
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.redAccent,
         colorText: Colors.white,
